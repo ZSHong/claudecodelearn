@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Preference
+
+**All responses must be in Chinese (中文).** The user prefers Chinese for all interactions, explanations, and documentation.
+
 ## Overview
 
 This is a minimalist Snake game built with vanilla HTML, CSS, and JavaScript. There is no build system, no package manager, and no external dependencies. Both game and its accompanying documentation are single-file HTML pages that run directly in a browser.
