@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>贪吃蛇</title>
+    <style>
+        body {
+            background-color: #F1E8E0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            border: 1px solid #E5E0DA;
+            display: block;
+            background-color: #F7F2EC;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [{x: 10, y: 10}];
+        let food = {x: 15, y: 15};
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+
+        function gameLoop() {
+            if (dx === 0 && dy === 0) {
+                draw();
+                setTimeout(gameLoop, 100);
+                return;
+            }
+
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+            // 穿墙
+            if (head.x < 0) head.x = tileCount - 1;
+            if (head.x >= tileCount) head.x = 0;
+            if (head.y < 0) head.y = tileCount - 1;
+            if (head.y >= tileCount) head.y = 0;
+
+            // 撞到自己
+            for (let segment of snake) {
+                if (head.x === segment.x && head.y === segment.y) {
+                    resetGame();
+                    return;
+                }
+            }
+
+            snake.unshift(head);
+
+            // 吃食物
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                food = {
+                    x: Math.floor(Math.random() * tileCount),
+                    y: Math.floor(Math.random() * tileCount)
+                };
+            } else {
+                snake.pop();
+            }
+
+            draw();
+            setTimeout(gameLoop, 100);
+        }
+
+        function draw() {
+            // 背景
+            ctx.fillStyle = '#F7F2EC';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 蛇
+            ctx.fillStyle = '#C65A4A';
+            for (let segment of snake) {
+                ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+            }
+
+            // 食物
+            ctx.fillStyle = '#6F655E';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+
+            // 分数
+            ctx.fillStyle = '#6F655E';
+            ctx.font = '16px Arial';
+            ctx.fillText('分数：' + score, 10, 20);
+        }
+
+        function resetGame() {
+            snake = [{x: 10, y: 10}];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            food = {x: 15, y: 15};
+            draw();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp': if (dy !== 1) { dx = 0; dy = -1; } break;
+                case 'ArrowDown': if (dy !== -1) { dx = 0; dy = 1; } break;
+                case 'ArrowLeft': if (dx !== 1) { dx = -1; dy = 0; } break;
+                case 'ArrowRight': if (dx !== -1) { dx = 1; dy = 0; } break;
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>

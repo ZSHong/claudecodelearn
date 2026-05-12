@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>贪吃蛇代码逻辑详解</title>
+    <style>
+        body {
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #27ae60;
+            margin-top: 20px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: "Consolas", "Monaco", monospace;
+            color: #c0392b;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: "Consolas", "Monaco", monospace;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>贪吃蛇游戏代码逻辑详解</h1>
+
+    <div class="section">
+        <h2>一、HTML & CSS 结构</h2>
+        <pre>&lt;canvas id="game" width="400" height="400"&gt;&lt;/canvas&gt;</pre>
+        <p>创建了一个 <strong>400×400 像素</strong> 的画布。</p>
+        <p>CSS 给画布加了 <strong>1px 黑色边框</strong>，并让它在页面中水平居中。</p>
+    </div>
+
+    <div class="section">
+        <h2>二、核心变量定义</h2>
+<pre>const gridSize = 20;
+const tileCount = canvas.width / gridSize; // 400 / 20 = 20</pre>
+
+        <table>
+            <tr>
+                <th>变量</th>
+                <th>含义</th>
+            </tr>
+            <tr>
+                <td><code>gridSize = 20</code></td>
+                <td>每个网格的边长是 <strong>20 像素</strong></td>
+            </tr>
+            <tr>
+                <td><code>tileCount = 20</code></td>
+                <td>画布横向、纵向各有 <strong>20 个网格</strong>（400÷20）</td>
+            </tr>
+        </table>
+
+<pre>let snake = [{x: 10, y: 10}];  // 蛇初始在正中间，只有1节
+let food = {x: 15, y: 15};     // 食物初始位置
+let dx = 0, dy = 0;            // 蛇的移动方向（初始静止）
+let score = 0;</pre>
+
+        <div class="highlight">
+            <strong>坐标说明</strong>：游戏逻辑中使用的是<strong>网格坐标</strong>（0~19 的整数），而不是像素坐标。例如 <code>{x:10, y:10}</code> 代表第10列第10行。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>三、游戏主循环 gameLoop()</h2>
+        <p>这是整个游戏的心脏，每 <strong>100 毫秒</strong> 执行一次。</p>
+
+        <h3>1. 初始静止状态</h3>
+<pre>if (dx === 0 &amp;&amp; dy === 0) {
+    draw();
+    setTimeout(gameLoop, 100);
+    return;
+}</pre>
+        <p>如果玩家还没按方向键（<code>dx=0, dy=0</code>），只绘制画面，不移动蛇。</p>
+
+        <h3>2. 计算蛇头新位置</h3>
+<pre>const head = {x: snake[0].x + dx, y: snake[0].y + dy};</pre>
+        <p>根据当前方向 <code>dx, dy</code>，计算蛇头下一步会到达哪个网格。</p>
+
+        <h3>3. 穿墙逻辑</h3>
+<pre>if (head.x &lt; 0) head.x = tileCount - 1;   // 从左边出去，从右边进来
+if (head.x &gt;= tileCount) head.x = 0;       // 从右边出去，从左边进来
+if (head.y &lt; 0) head.y = tileCount - 1;   // 从上边出去，从下边进来
+if (head.y &gt;= tileCount) head.y = 0;       // 从下边出去，从上边进来</pre>
+        <p><strong>经典贪吃蛇穿墙设定</strong>：蛇头从一侧出去，会从另一侧进来。</p>
+
+        <h3>4. 撞到自己检测</h3>
+<pre>for (let segment of snake) {
+    if (head.x === segment.x &amp;&amp; head.y === segment.y) {
+        resetGame();  // 撞到自己，游戏重置
+        return;
+    }
+}</pre>
+        <p>遍历蛇身，如果新蛇头和某节身体重合，判定为<strong>撞到自己</strong>，游戏结束并重置。</p>
+
+        <h3>5. 移动蛇（核心逻辑）</h3>
+<pre>snake.unshift(head);  // 在头部插入新位置</pre>
+        <p><code>unshift()</code> 把新位置加到数组最前面，新位置成为新蛇头。</p>
+
+        <h3>6. 吃食物判断</h3>
+<pre>if (head.x === food.x &amp;&amp; head.y === food.y) {
+    score++;
+    food = {
+        x: Math.floor(Math.random() * tileCount),
+        y: Math.floor(Math.random() * tileCount)
+    };
+} else {
+    snake.pop();  // 没吃到食物，就删掉尾部，保持长度不变
+}</pre>
+
+        <table>
+            <tr>
+                <th>情况</th>
+                <th>行为</th>
+            </tr>
+            <tr>
+                <td><strong>吃到食物</strong></td>
+                <td>分数+1，重新随机生成食物位置，<strong>不删除尾部</strong> → 蛇变长</td>
+            </tr>
+            <tr>
+                <td><strong>没吃到食物</strong></td>
+                <td><strong>删除尾部</strong> → 蛇向前移动一格，长度不变</td>
+            </tr>
+        </table>
+
+        <div class="highlight">
+            <strong>关键设计</strong>：蛇的移动本质上就是「头部加一格，尾部删一格」；吃到食物时只加不删，长度就增加了。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>四、绘制函数 draw()</h2>
+<pre>// 背景
+ctx.fillStyle = '#fff';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// 蛇
+ctx.fillStyle = '#0f0';
+for (let segment of snake) {
+    ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+}
+
+// 食物
+ctx.fillStyle = '#f00';
+ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+
+// 分数
+ctx.fillStyle = '#000';
+ctx.font = '16px Arial';
+ctx.fillText('分数：' + score, 10, 20);</pre>
+        <ul>
+            <li><strong>背景</strong>：白色填充整个画布</li>
+            <li><strong>蛇身</strong>：绿色方块，网格坐标转换成像素坐标（<code>x * 20, y * 20</code>），绘制大小是 <code>18×18</code>（<code>gridSize - 2</code>），留出 2 像素间隙</li>
+            <li><strong>食物</strong>：红色方块</li>
+            <li><strong>分数</strong>：左上角显示当前分数</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>五、重置函数 resetGame()</h2>
+<pre>snake = [{x: 10, y: 10}];
+dx = 0; dy = 0;
+score = 0;
+food = {x: 15, y: 15};</pre>
+        <p>把所有状态恢复到初始值，蛇回到中心，方向归零，分数清零。</p>
+    </div>
+
+    <div class="section">
+        <h2>六、键盘控制</h2>
+<pre>document.addEventListener('keydown', (e) =&gt; {
+    switch(e.key) {
+        case 'ArrowUp':    if (dy !== 1)  { dx = 0; dy = -1; } break;
+        case 'ArrowDown':  if (dy !== -1) { dx = 0; dy = 1; }  break;
+        case 'ArrowLeft':  if (dx !== 1)  { dx = -1; dy = 0; } break;
+        case 'ArrowRight': if (dx !== -1) { dx = 1; dy = 0; }  break;
+    }
+});</pre>
+
+        <table>
+            <tr>
+                <th>按键</th>
+                <th>dx</th>
+                <th>dy</th>
+                <th>方向</th>
+            </tr>
+            <tr>
+                <td>↑ 上</td>
+                <td>0</td>
+                <td>-1</td>
+                <td>向上</td>
+            </tr>
+            <tr>
+                <td>↓ 下</td>
+                <td>0</td>
+                <td>1</td>
+                <td>向下</td>
+            </tr>
+            <tr>
+                <td>← 左</td>
+                <td>-1</td>
+                <td>0</td>
+                <td>向左</td>
+            </tr>
+            <tr>
+                <td>→ 右</td>
+                <td>1</td>
+                <td>0</td>
+                <td>向右</td>
+            </tr>
+        </table>
+
+        <div class="highlight">
+            <strong>防反向逻辑</strong>：例如 <code>if (dy !== 1)</code>，如果蛇正在向下走（<code>dy=1</code>），就不能按上键直接掉头，否则会瞬间撞到自己的身体。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>七、总结：游戏流程</h2>
+<pre style="background-color: #f4f4f4; color: #333;">
+开始 → gameLoop
+       ↓
+    计算新蛇头(head)
+       ↓
+    穿墙处理
+       ↓
+    是否撞到自己？ ──是──→ resetGame()
+       ↓ 否
+    snake.unshift(head)
+       ↓
+    是否吃到食物？
+     ↓ 是              ↓ 否
+   score++          snake.pop()
+   生成新食物          ↓
+       ↓           draw()
+    draw()         setTimeout(...)
+       ↓              ↓
+      等待100ms ←─────┘
+</pre>
+    </div>
+
+</body>
+</html>
